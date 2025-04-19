@@ -1,0 +1,160 @@
+#include <TinyGPS++.h>
+#include <SoftwareSerial.h>
+
+static const int RXPin = 4, TXPin = 5;
+static const uint32_t GPSBaud = 9600;
+
+// The TinyGPS++ object
+TinyGPSPlus gps;
+
+// The serial connection to the GPS device
+SoftwareSerial ss(RXPin, TXPin);
+
+
+
+
+ int timesTosend=1;
+int count=0;
+int count1=0;
+ 
+int sense=0, s=0;;
+
+void setup()
+{
+  Serial.begin(9600);
+ 
+
+ 
+ 
+
+ 
+   ss.begin(GPSBaud);
+  delay(100); 
+  pinMode(A2, INPUT);
+  pinMode(A0, INPUT);
+  digitalWrite(A0, HIGH);
+  pinMode(A1, OUTPUT);
+  digitalWrite(A1, LOW);
+  analogReference(DEFAULT);
+}
+
+
+
+
+
+void loop()
+{
+  // This sketch displays information every time a new sentence is correctly encoded.
+  if(analogRead(A2)>500) //alcohol
+  {
+    s=1;
+  }
+  
+  
+  Serial.println(analogRead(A2));
+  while (ss.available() > 0)
+    if (gps.encode(ss.read()))
+    {
+      displayInfo();
+      if(analogRead(A2)>500)
+  {
+    s=1;
+  }
+  
+      
+      
+     
+    }
+
+  if (millis() > 5000 && gps.charsProcessed() < 10)
+  {
+    Serial.println(F("No GPS detected: check wiring."));
+    //while(true);
+  }
+  
+}
+
+void displayInfo()
+{
+  
+  Serial.print(F("Location: ")); 
+  if (gps.location.isValid())
+  {
+
+  if(s==1)
+  {
+  digitalWrite(A1, HIGH);
+          //Serial.begin(9600);
+      delay(500);
+       Serial.println("AT+CMGF=1"); //set GSM to text mode
+  delay(500);
+  while(count<timesTosend){
+delay(1500);
+ Serial.print("AT+CMGS=\"");
+ Serial.print("7618090888");
+ Serial.println("\"");
+while ( Serial.read()!='>');
+{
+ if(s==1)
+ {
+  s=0;
+  Serial.println("Alcohol Sensor!!");
+ }
+   Serial.println("Alert at Location:");
+    Serial.println("Lat -");
+ Serial.println(gps.location.lat());  //SMS body
+delay(500);
+Serial.println();
+Serial.println("Lng -");
+Serial.println(gps.location.lng());  //SMS body
+delay(500);
+ Serial.write(0x1A);  // sends ctrl+z end of message
+     Serial.write(0x0D);  // Carriage Return in Hex
+ Serial.write(0x0A);  // Line feed in Hex
+
+//The 0D0A pair of characters is the signal for the end of a line and beginning of another.
+delay(5000);
+}
+count++;
+} 
+  }
+ 
+ if(gps.location.lat() == 28.67 && gps.location.lng() == 77.50)
+ {
+  count1=0;
+         Serial.println("AT+CMGF=1"); //set GSM to text mode
+  delay(500);
+  while(count1<timesTosend){
+delay(1500);
+ Serial.print("AT+CMGS=\"");
+ Serial.print("9911331389");
+ Serial.println("\"");
+while ( Serial.read()!='>');
+{
+ 
+   Serial.println("Rs 1000 toll deducted");
+    delay(500);
+ Serial.write(0x1A);  // sends ctrl+z end of message
+     Serial.write(0x0D);  // Carriage Return in Hex
+ Serial.write(0x0A);  // Line feed in Hex
+
+//The 0D0A pair of characters is the signal for the end of a line and beginning of another.
+delay(5000);
+}
+count1++;
+} 
+ }
+ ss.begin(GPSBaud);
+    Serial.print(gps.location.lat(), 6);
+    Serial.print(F(","));
+    Serial.println(gps.location.lng(), 6);
+  }
+  else
+  {
+    Serial.println(F("INVALID"));
+  }
+
+  
+
+
+}
